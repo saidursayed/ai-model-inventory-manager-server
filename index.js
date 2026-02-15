@@ -38,57 +38,7 @@ async function run() {
       res.send(result);
     });
 
-    // all models
-    app.get("/models", async (req, res) => {
-      const cursor = aiModelCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    // single model
-    app.get("/models/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await aiModelCollection.findOne(query);
-      res.send(result);
-    });
-
-    // add model
-    app.post("/add-model", async (req, res) => {
-      const newModel = req.body;
-      const result = await aiModelCollection.insertOne(newModel);
-      res.send(result);
-    });
-
-    // my model
-    app.get("/my-models", async (req, res) => {
-      const email = req.query.email;
-      const cursor = aiModelCollection.find({
-        createdBy: email,
-      });
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    // update model
-    app.put("/models/:id", async (req, res) => {
-      const id = req.params.id;
-      const updatedModel = req.body;
-      const query = { _id: new ObjectId(id) };
-      const update = {
-        $set: updatedModel,
-      };
-      const result = await aiModelCollection.updateOne(query, update);
-      res.send(result);
-    });
-
-    // delete model
-    app.delete("/models/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await aiModelCollection.deleteOne(query);
-      res.send(result);
-    });
+    
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
