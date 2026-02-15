@@ -38,7 +38,14 @@ async function run() {
       res.send(result);
     });
 
-    
+    // all models
+    app.get("/models", async (req, res) => {
+      const cursor = aiModelCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+   
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
