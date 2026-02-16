@@ -45,7 +45,13 @@ async function run() {
       res.send(result);
     });
 
-
+    // single model
+    app.get("/models/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await aiModelCollection.findOne(query);
+      res.send(result);
+    });
 
     // add model
     app.post("/add-model", async (req, res) => {
@@ -53,8 +59,6 @@ async function run() {
       const result = await aiModelCollection.insertOne(newModel);
       res.send(result);
     });
-
-    
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
