@@ -71,7 +71,23 @@ async function run() {
       res.send(result);
     });
 
-    
+    app.post("/purchased-models/:id", async(req, res)=>{
+      const data = req.body;
+      const id = req.params.id;
+      const result = await purchasedCollection.insertOne(data);
+
+      // Purchased Count
+      const filter = {_id: new ObjectId(id)}
+      const update = {
+        $inc: {
+          purchased: 1
+        }
+      }
+      const purchasedCount = await aiModelCollection.updateOne(filter, update)
+      res.send(result, purchasedCount)
+    })
+
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
