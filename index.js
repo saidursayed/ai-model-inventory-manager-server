@@ -27,6 +27,7 @@ async function run() {
     await client.connect();
     const db = client.db("ai-model-db");
     const aiModelCollection = db.collection("ai-models");
+    const purchasedCollection = db.collection("purchased-models");
 
     // latest models
     app.get("/latest-models", async (req, res) => {
@@ -59,6 +60,18 @@ async function run() {
       const result = await aiModelCollection.insertOne(newModel);
       res.send(result);
     });
+
+    // my model
+    app.get("/my-models", async (req, res) => {
+      const email = req.query.email;
+      const cursor = aiModelCollection.find({
+        createdBy: email,
+      });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
