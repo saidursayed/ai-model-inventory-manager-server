@@ -94,7 +94,17 @@ async function run() {
       res.send(result);
     });
 
-
+    // update model
+    app.put("/models/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedModel = req.body;
+      const query = { _id: new ObjectId(id) };
+      const update = {
+        $set: updatedModel,
+      };
+      const result = await aiModelCollection.updateOne(query, update);
+      res.send(result);
+    });
 
     // delete model
     app.delete("/models/:id", async (req, res) => {
