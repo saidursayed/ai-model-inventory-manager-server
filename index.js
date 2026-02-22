@@ -114,12 +114,26 @@ async function run() {
       res.send(result);
     });
 
-    // search model 
-    app.get("/search", async(req, res)=>{
+    // search model
+    app.get("/search", async (req, res) => {
       const search = req.query.search;
-      const result = await aiModelCollection.find({name: {$regex: search, $options: "i"}}).toArray()
+      const result = await aiModelCollection
+        .find({ name: { $regex: search, $options: "i" } })
+        .toArray();
       res.send(result);
-    })
+    });
+
+    // filter model
+    app.get("/filter-models", async (req, res) => {
+      const framework = req.query.framework;
+      const query = {};
+      if (framework) {
+        query.framework = framework;
+      }
+      const result = await aiModelCollection.find(query).toArray();
+
+      res.send(result);
+    });
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
