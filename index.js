@@ -2,17 +2,20 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const admin = require("firebase-admin");
+require("dotenv").config()
+const serviceAccount = require("./ai-model-inventory-manager-ai-firebase-adminsdk-key.json");
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("AI Model Inventory Manager Server");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
 });
 
 const uri =
-  "mongodb+srv://ai-model-inventory-manager-db:5HaN8ztFHznoN2t1@simple-crud-server.63zgbdx.mongodb.net/?appName=simple-crud-server";
+  `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@simple-crud-server.63zgbdx.mongodb.net/?appName=simple-crud-server`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -21,6 +24,26 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+app.get("/", (req, res) => {
+  res.send("AI Model Inventory Manager Server");
+});
+
+const verifyToken = async (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = authorization.split(" ")[1];
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.decoded = decoded;
+
+    next();
+  } catch (error) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+};
 
 async function run() {
   try {
@@ -33,7 +56,7 @@ async function run() {
     app.get("/latest-models", async (req, res) => {
       const cursor = aiModelCollection
         .find()
-        .sort({ createdAt: "desc" })
+        .sort({ createdAt: -1})
         .limit(6);
       const result = await cursor.toArray();
       res.send(result);
@@ -47,7 +70,7 @@ async function run() {
     });
 
     // single model
-    app.get("/models/:id", async (req, res) => {
+    app.get("/models/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await aiModelCollection.findOne(query);
@@ -55,15 +78,18 @@ async function run() {
     });
 
     // add model
-    app.post("/add-model", async (req, res) => {
+    app.post("/add-model", verifyToken, async (req, res) => {
       const newModel = req.body;
       const result = await aiModelCollection.insertOne(newModel);
       res.send(result);
     });
 
     // my model
-    app.get("/my-models", async (req, res) => {
+    app.get("/my-models", verifyToken, async (req, res) => {
       const email = req.query.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
       const cursor = aiModelCollection.find({
         createdBy: email,
       });
@@ -71,7 +97,8 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/purchased-models/:id", async (req, res) => {
+    // purchased model 
+    app.post("/purchased-models/:id", verifyToken, async (req, res) => {
       const data = req.body;
       const id = req.params.id;
       const result = await purchasedCollection.insertOne(data);
@@ -84,18 +111,22 @@ async function run() {
         },
       };
       const purchasedCount = await aiModelCollection.updateOne(filter, update);
-      res.send(result, purchasedCount);
+      res.send({ result, purchasedCount });
     });
 
-    app.get("/my-purchased-models", async (req, res) => {
+    // my purchased model 
+    app.get("/my-purchased-models", verifyToken, async (req, res) => {
       const email = req.query.email;
+      if(email !== req.decoded.email){
+        return res.status(403).send({ message: "forbidden access" });
+      }
       const cursor = purchasedCollection.find({ purchasedBy: email });
       const result = await cursor.toArray();
       res.send(result);
     });
 
     // update model
-    app.put("/models/:id", async (req, res) => {
+    app.put("/models/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const updatedModel = req.body;
       const query = { _id: new ObjectId(id) };
@@ -107,7 +138,7 @@ async function run() {
     });
 
     // delete model
-    app.delete("/models/:id", async (req, res) => {
+    app.delete("/models/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await aiModelCollection.deleteOne(query);
