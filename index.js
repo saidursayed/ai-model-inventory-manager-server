@@ -47,7 +47,7 @@ const verifyToken = async (req, res, next) => {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const db = client.db("ai-model-db");
     const aiModelCollection = db.collection("ai-models");
     const purchasedCollection = db.collection("purchased-models");
@@ -70,7 +70,7 @@ async function run() {
     });
 
     // single model
-    app.get("/models/:id", verifyToken, async (req, res) => {
+    app.get("/models/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await aiModelCollection.findOne(query);
@@ -92,7 +92,7 @@ async function run() {
       }
       const cursor = aiModelCollection.find({
         createdBy: email,
-      });
+      }).sort({ createdAt: -1});
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -120,7 +120,7 @@ async function run() {
       if(email !== req.decoded.email){
         return res.status(403).send({ message: "forbidden access" });
       }
-      const cursor = purchasedCollection.find({ purchasedBy: email });
+      const cursor = purchasedCollection.find({ purchasedBy: email }).sort({ purchasedAt: -1});
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -165,12 +165,11 @@ async function run() {
 
       res.send(result);
     });
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
   } finally {
-    // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }

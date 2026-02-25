@@ -1,3 +1,4 @@
 node_modules
 .env
 ai-model-inventory-manager-ai-firebase-adminsdk-key.json
+.vercel
